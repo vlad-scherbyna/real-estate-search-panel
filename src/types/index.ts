@@ -2,7 +2,7 @@ export interface SearchFilters {
   mode: 'rent' | 'buy' | 'ai'
   location?: string
   category?: string
-  priceRange?: [number, number]
+  priceRange?: string
   rooms?: number
   area?: [number, number]
   type?: 'apartment' | 'house' | 'commercial'
