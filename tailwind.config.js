@@ -20,10 +20,6 @@ export default {
         },
         dark: '#0e0e0e',
       },
-      boxShadow: {
-        light: '0px 1px 1px 0px rgba(0, 0, 0, 0.02), 0px 1px 3px 0px rgba(0, 0, 0, 0.04)',
-        'light-blue': '0px 0px 0px 1.5px rgba(47, 114, 226, 0.25), 0px 1px 1px 0px rgba(0, 0, 0, 0.02), 0px 1px 3px 0px rgba(0, 0, 0, 0.04)',
-      },
     },
   },
   plugins: [],

@@ -15,7 +15,6 @@ export function LocationField({ className }: LocationFieldProps) {
   const { filters, updateFilter, setSelectedDistrictIds } = useSearchStore()
   const [isOpen, setIsOpen] = useState(false)
 
-  // Initialize with current filter value and keep in sync
   const [query, setQuery] = useState(filters.location || '')
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -29,13 +28,9 @@ export function LocationField({ className }: LocationFieldProps) {
     setQuery(displayValue)
   }
 
-  // Debounce search query for backend requests
   const debouncedQuery = useDebounce(query, 300)
-
-  // Only use backend search if query is long enough
   const searchQuery = debouncedQuery.length >= 2 ? debouncedQuery : undefined
 
-  // Get combined suggestions with backend search for popular boundaries
   const { data: allSuggestions, isLoading, error } = useCombinedLocationSuggestions(searchQuery)
 
   // Filter suggestions based on query (recent searches are filtered on frontend)
@@ -98,10 +93,8 @@ export function LocationField({ className }: LocationFieldProps) {
 
     // Set district IDs based on selection
     if (suggestion.type === 'popular') {
-      // For cities, set the city ID
       setSelectedDistrictIds([suggestion.id])
     } else {
-      // For recent (mapbox results), clear district selection
       setSelectedDistrictIds([])
     }
 
@@ -162,7 +155,7 @@ export function LocationField({ className }: LocationFieldProps) {
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => setIsOpen(true)}
-          placeholder="Search locations..."
+          placeholder="City District, Street, Postcode"
           className={cn(
             'w-full px-4 py-2 pr-20 text-sm border border-gray-200 rounded-lg',
             'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
@@ -185,13 +178,6 @@ export function LocationField({ className }: LocationFieldProps) {
               </svg>
             </button>
           )}
-
-          {/* Search icon */}
-          <div className="p-3">
-            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
         </div>
       </div>
 
