@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { geoApi } from './api'
-import { LocationSuggestion, RecentSearchItem, PopularBoundaryItem } from '@/types/geo-api'
+import { LocationSuggestion, RecentSearchItem, PopularBoundaryItem, LocationType } from '@/types/geo-api'
 
 // Query keys
 const geoKeys = {
@@ -14,7 +14,7 @@ function transformRecentSearches(recentItems: RecentSearchItem[]): LocationSugge
   return recentItems.map(item => ({
     id: item.mapboxId,
     name: item.name,
-    type: 'recent' as const,
+    type: LocationType.RECENT,
     location: item.pt,
   }))
 }
@@ -23,8 +23,8 @@ function transformRecentSearches(recentItems: RecentSearchItem[]): LocationSugge
 function transformPopularBoundaries(popularItems: PopularBoundaryItem[]): LocationSuggestion[] {
   return popularItems.map(item => ({
     id: item.id,
-    name: item.altName, // используем altName
-    type: 'popular' as const,
+    name: item.altName,
+    type: LocationType.POPULAR,
     label: `${item.children.length} districts`, // показываем кол-во районов
   }))
 }
