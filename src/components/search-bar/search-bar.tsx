@@ -6,9 +6,9 @@ import { CategoryField } from './category-field'
 import { PriceField } from './price-field'
 import { cn } from '@/lib/utils'
 import { useSearchStore } from '@/store/search'
-import { useMemo } from 'react'
-import { SearchFilter } from '@/types/tenement-api'
-import { useTenementCount, useTenementSearch } from '@/api/tenement/tenement'
+import { useMemo, useState } from 'react'
+import { SearchFilter, SearchResponse } from '@/types/tenement-api'
+import { useTenementSearch } from '@/api/tenement/tenement'
 
 export interface SearchBarProps {
   className?: string
@@ -16,11 +16,15 @@ export interface SearchBarProps {
 
 export function SearchBar({ className }: SearchBarProps) {
   const { filters, selectedDistrictIds } = useSearchStore()
+  const [searchResults, setSearchResults] = useState<SearchResponse>()
+
+  // URL sync
+  // useUrlSync()
 
   // Hook for search mutation
   const searchMutation = useTenementSearch()
 
-  // Конвертируем наши фильтры в формат API
+  // convert filter for api format
   const apiFilter: SearchFilter = useMemo(() => {
     const filter: SearchFilter = {
       rentType: [filters.mode === 'ai' ? 'rent' : filters.mode],
@@ -28,24 +32,28 @@ export function SearchBar({ className }: SearchBarProps) {
       locationAccuracy: [9, 5, 1, 0],
     }
 
+    // if selected district IDs exist
     if (selectedDistrictIds.length > 0) {
       filter.withinId = selectedDistrictIds
     }
-
-    if (filters.location && selectedDistrictIds.length === 0) {
+    // if search and no district IDs
+    else if (filters.location && selectedDistrictIds.length === 0) {
       filter.search = filters.location
     }
 
     return filter
   }, [filters.mode, filters.location, selectedDistrictIds])
 
-  const { data: countData, isLoading: isLoadingCount } = useTenementCount(apiFilter)
-
   const handleSearch = () => {
     searchMutation.mutate({
       filter: apiFilter,
       page: 1,
       pageSize: 20,
+    }, {
+      onSuccess: (data) => {
+        console.log('🎉 Search completed:', data)
+        setSearchResults(data)
+      }
     })
   }
 
@@ -137,22 +145,31 @@ export function SearchBar({ className }: SearchBarProps) {
 
         {/* Results info */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-          <p className="text-sm text-gray-600">
-            {isLoadingCount ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
-                <span className="font-semibold text-gray-900">Loading...</span>
-              </span>
-            ) : (
-              <>
-                <span className="font-semibold text-gray-900">
-                  {formatCount(countData?.count || 0)}
-                </span>
-                {' '}verified listings for {filters.mode === 'ai' ? 'AI-matched properties' : `properties for ${filters.mode}`}
-                {filters.location && ` in ${filters.location}`}
-              </>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {/* Search Results Summary */}
+            {searchResults && searchResults.paging && (
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 text-blue-600">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-semibold">
+                    {formatCount(searchResults.paging.totalCount)} found
+                  </span>
+                </div>
+
+                <div className="text-gray-500">
+                  Page {searchResults.paging.page} of {searchResults.paging.pageCount}
+                </div>
+
+                {searchResults.paging.allTotalCount > searchResults.paging.totalCount && (
+                  <div className="text-gray-500 text-xs">
+                    ({formatCount(searchResults.paging.allTotalCount)} total available)
+                  </div>
+                )}
+              </div>
             )}
-          </p>
+          </div>
         </div>
       </div>
     </div>

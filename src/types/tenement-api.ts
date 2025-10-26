@@ -2,7 +2,7 @@ export interface SearchFilter {
   withinId?: string[]  // Array with IDs of selected districts
   type?: number[]      // Array with ID of selected type
   rentType?: ('rent' | 'buy')[]  // Array with rent or buy
-  rent?: [number, number]        // Array with min and max rent
+  rent?: [number, number] // Array with min and max rent
   search?: string      // Search term
   status?: 'active'    // Property status
   locationAccuracy?: (9 | 5 | 1 | 0)[] // Required location accuracy values
@@ -38,10 +38,13 @@ export interface SearchRequest {
 }
 
 export interface SearchResponse {
-  items: TenementItem[]
-  total: number
-  page: number
-  pageSize: number
+  res: TenementItem[]
+  paging: {
+    pageCount: number
+    totalCount: number
+    allTotalCount: number
+    page: number
+  }
 }
 
 export interface TenementItem {
@@ -52,9 +55,4 @@ export interface TenementItem {
     lat: number
     lng: number
   }
-}
-
-// Count response
-export interface TenementCount {
-  count: number
 }

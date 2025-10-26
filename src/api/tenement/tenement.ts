@@ -11,16 +11,6 @@ const tenementKeys = {
     [...tenementKeys.all, 'count', filter] as const,
 }
 
-// Hook for getting tenement count
-export const useTenementCount = (filter: SearchFilter) => {
-  return useQuery({
-    queryKey: tenementKeys.count(filter),
-    queryFn: () => tenementApi.getCount(filter),
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
-  })
-}
-
 // Hook for tenement search with mutation (triggered manually)
 export const useTenementSearch = () => {
   return useMutation({

@@ -1,5 +1,5 @@
 import { apiClient } from '../api-client'
-import { SearchFilter, SearchRequest, SearchResponse, TenementCount } from '@/types/tenement-api'
+import { SearchFilter, SearchRequest, SearchResponse } from '@/types/tenement-api'
 
 // Helper function to build search request
 const buildSearchRequest = (filter: SearchFilter, page = 1, pageSize = 20): SearchRequest => {
@@ -56,16 +56,4 @@ export const tenementApi = {
     const response = await apiClient.post('/tenement/search', searchRequest)
     return response.data
   },
-
-  // Get count of tenements matching filter
-  getCount: async (filter: SearchFilter): Promise<TenementCount> => {
-    const searchRequest = buildSearchRequest(filter) // Only need count, not items
-
-    // Use different endpoint or add count flag
-    const response = await apiClient.post('/tenement/search/count', searchRequest.filter)
-    return response.data
-  },
-
-  // Export the helper for external use if needed
-  buildSearchRequest,
 }

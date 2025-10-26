@@ -25,28 +25,6 @@ export const useUrlSync = () => {
       hasUpdates = true
     }
 
-    // Category
-    const category = searchParams.get('category')
-    if (category && category !== filters.category) {
-      updateFilter('category', category)
-      hasUpdates = true
-    }
-
-    // Price range
-    const priceMin = searchParams.get('priceMin')
-    const priceMax = searchParams.get('priceMax')
-    if (priceMin && priceMax) {
-      const currentPriceRange = filters.priceRange
-      const newPriceRange: [number, number] = [parseInt(priceMin), parseInt(priceMax)]
-
-      if (!currentPriceRange ||
-        currentPriceRange[0] !== newPriceRange[0] ||
-        currentPriceRange[1] !== newPriceRange[1]) {
-        updateFilter('priceRange', newPriceRange)
-        hasUpdates = true
-      }
-    }
-
     // Only update if we actually have changes to prevent infinite loops
     console.log('URL sync: hasUpdates =', hasUpdates)
   }, [searchParams, updateFilter, filters.mode, filters.location, filters.category, filters.priceRange])
@@ -64,15 +42,6 @@ export const useUrlSync = () => {
 
     if (filters.location) {
       params.set('location', filters.location)
-    }
-
-    if (filters.category) {
-      params.set('category', filters.category)
-    }
-
-    if (filters.priceRange) {
-      params.set('priceMin', filters.priceRange[0].toString())
-      params.set('priceMax', filters.priceRange[1].toString())
     }
 
     // Build URL
