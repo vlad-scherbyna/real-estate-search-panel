@@ -6,7 +6,7 @@ import { LocationSuggestion, RecentSearchItem, PopularBoundaryItem } from '@/typ
 const geoKeys = {
   all: ['geo'] as const,
   recentSearches: () => [...geoKeys.all, 'recent-searches'] as const,
-  popularBoundaries: () => [...geoKeys.all, 'popular-boundaries'] as const,
+  popularBoundaries: (search?: string) => [...geoKeys.all, 'popular-boundaries', search || 'all'] as const,
 }
 
 // Transform recent searches - просто name
@@ -23,7 +23,7 @@ function transformRecentSearches(recentItems: RecentSearchItem[]): LocationSugge
 function transformPopularBoundaries(popularItems: PopularBoundaryItem[]): LocationSuggestion[] {
   return popularItems.map(item => ({
     id: item.id,
-    name: item.altName,
+    name: item.altName, // используем altName
     type: 'popular' as const,
     label: `${item.children.length} districts`, // показываем кол-во районов
   }))
@@ -39,20 +39,21 @@ export const useRecentSearches = () => {
   })
 }
 
-// Hook for popular boundaries
-export const usePopularBoundaries = () => {
+// Hook for popular boundaries with search support
+export const usePopularBoundaries = (search?: string) => {
   return useQuery({
-    queryKey: geoKeys.popularBoundaries(),
-    queryFn: geoApi.getPopularBoundaries,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    gcTime: 60 * 60 * 1000, // 1 hour
+    queryKey: geoKeys.popularBoundaries(search),
+    queryFn: () => geoApi.getPopularBoundaries(search),
+    staleTime: search ? 30 * 1000 : 30 * 60 * 1000, // Shorter cache for search results
+    gcTime: search ? 2 * 60 * 1000 : 60 * 60 * 1000, // Shorter GC for search results
+    enabled: true, // Always enabled, but will use different cache keys
   })
 }
 
-// Combined hook using individual queries
-export const useCombinedLocationSuggestions = () => {
+// Combined hook using individual queries with search support
+export const useCombinedLocationSuggestions = (searchQuery?: string) => {
   const recentQuery = useRecentSearches()
-  const popularQuery = usePopularBoundaries()
+  const popularQuery = usePopularBoundaries(searchQuery)
 
   // Combine the data
   const suggestions: LocationSuggestion[] = []
@@ -71,6 +72,17 @@ export const useCombinedLocationSuggestions = () => {
     error: recentQuery.error || popularQuery.error,
     isSuccess: recentQuery.isSuccess && popularQuery.isSuccess,
   }
+}
+
+// Hook specifically for popular boundaries search (used separately if needed)
+export const usePopularBoundariesSearch = (search: string) => {
+  return useQuery({
+    queryKey: geoKeys.popularBoundaries(search),
+    queryFn: () => geoApi.getPopularBoundaries(search),
+    staleTime: 30 * 1000, // 30 seconds for search results
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    enabled: search.length >= 2, // Only search when query is at least 2 characters
+  })
 }
 
 // Export query keys for invalidation

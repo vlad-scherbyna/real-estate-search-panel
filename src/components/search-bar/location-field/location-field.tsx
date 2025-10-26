@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useCombinedLocationSuggestions } from '@/api/geo/geo'
 import { LocationSuggestion } from '@/types/geo-api'
 import { useSearchStore } from '@/store/search'
 import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/use-debounce'
 
 export interface LocationFieldProps {
   className?: string
@@ -17,19 +18,37 @@ export function LocationField({ className }: LocationFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Get combined suggestions from both APIs
-  const { data: allSuggestions, isLoading, error } = useCombinedLocationSuggestions()
+  // Debounce search query for backend requests
+  const debouncedQuery = useDebounce(query, 300)
 
-  // Filter suggestions based on query
-  const filteredSuggestions = allSuggestions?.filter(suggestion =>
-    suggestion.name.toLowerCase().includes(query.toLowerCase())
-  ) || []
+  // Only use backend search if query is long enough
+  const searchQuery = debouncedQuery.length >= 2 ? debouncedQuery : undefined
 
-  // Group suggestions by type - только 2 группы
-  const groupedSuggestions = {
+  // Get combined suggestions with backend search for popular boundaries
+  const { data: allSuggestions, isLoading, error } = useCombinedLocationSuggestions(searchQuery)
+
+  // Filter suggestions based on query (recent searches are filtered on frontend)
+  const filteredSuggestions = useMemo(() => {
+    if (!allSuggestions) return []
+
+    return allSuggestions.filter(suggestion => {
+      // For popular boundaries, backend already filtered them
+      if (suggestion.type === 'popular') return true
+
+      // For recent searches, filter on frontend
+      if (suggestion.type === 'recent') {
+        return suggestion.name.toLowerCase().includes(query.toLowerCase())
+      }
+
+      return true
+    })
+  }, [allSuggestions, query])
+
+  // Group suggestions by type
+  const groupedSuggestions = useMemo(() => ({
     recent: filteredSuggestions.filter(s => s.type === 'recent'),
     popular: filteredSuggestions.filter(s => s.type === 'popular'),
-  }
+  }), [filteredSuggestions])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -148,7 +167,7 @@ export function LocationField({ className }: LocationFieldProps) {
             <div className="px-3 py-4 text-center text-gray-500">
               <div className="inline-flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                Loading...
+                Searching...
               </div>
             </div>
           ) : error ? (
@@ -157,12 +176,12 @@ export function LocationField({ className }: LocationFieldProps) {
             </div>
           ) : filteredSuggestions.length === 0 ? (
             <div className="px-3 py-4 text-center text-gray-500">
-              No locations found
+              {query.length >= 2 ? 'No locations found' : 'Type to search locations...'}
             </div>
           ) : (
             <div>
               {renderSuggestionGroup('Recent', groupedSuggestions.recent)}
-              {renderSuggestionGroup('Popular', groupedSuggestions.popular)}
+              {renderSuggestionGroup('Cities', groupedSuggestions.popular)}
             </div>
           )}
         </div>
