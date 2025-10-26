@@ -4,11 +4,11 @@ import { SearchFilter } from '@/types/tenement-api'
 
 // Query keys
 const tenementKeys = {
-  all: ['tenement'] as const,
+  all: ['tenement'],
   search: (filter: SearchFilter, page: number, pageSize: number) =>
-    [...tenementKeys.all, 'search', filter, page, pageSize] as const,
+    [...tenementKeys.all, 'search', filter, page, pageSize],
   count: (filter: SearchFilter) =>
-    [...tenementKeys.all, 'count', filter] as const,
+    [...tenementKeys.all, 'count', filter],
 }
 
 // Hook for tenement search with mutation (triggered manually)

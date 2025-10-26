@@ -14,14 +14,14 @@ const toggleOptions = [
   { value: SearchMode.RENT, label: 'Rent' },
   { value: SearchMode.BUY, label: 'Buy' },
   {
-    value: SearchMode.AI as const,
+    value: SearchMode.AI,
     label: (
       <>
         Lystio&nbsp;<span className="text-purple-700">AI</span>
       </>
     )
   },
-] as const
+]
 
 export function Toggles({ className }: TogglesProps) {
   const { filters, updateFilter } = useSearchStore()

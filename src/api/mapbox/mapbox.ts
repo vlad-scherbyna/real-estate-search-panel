@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { mapboxApi } from './api'
 
 const mapboxKeys = {
-  all: ['mapbox'] as const,
-  search: (query: string) => [...mapboxKeys.all, 'search', query] as const,
+  all: ['mapbox'],
+  search: (query: string) => [...mapboxKeys.all, 'search', query],
 }
 
 export const useMapboxSearch = (query: string, enabled = true) => {

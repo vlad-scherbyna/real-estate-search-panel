@@ -4,9 +4,9 @@ import { LocationSuggestion, RecentSearchItem, PopularBoundaryItem, LocationType
 
 // Query keys
 const geoKeys = {
-  all: ['geo'] as const,
-  recentSearches: () => [...geoKeys.all, 'recent-searches'] as const,
-  popularBoundaries: (search?: string) => [...geoKeys.all, 'popular-boundaries', search || 'all'] as const,
+  all: ['geo'],
+  recentSearches: () => [...geoKeys.all, 'recent-searches'],
+  popularBoundaries: (search?: string) => [...geoKeys.all, 'popular-boundaries', search || 'all'],
 }
 
 // Transform recent searches - просто name
