@@ -37,7 +37,7 @@ export const useUrlSync = () => {
     }
 
     isInitialLoad.current = false
-  }, [filters.location, filters.mode, searchParams, updateFilter])
+  }, [searchParams, updateFilter])
 
   // Sync store to URL only after initial load and not during URL->store sync
   useEffect(() => {
