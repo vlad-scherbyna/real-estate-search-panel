@@ -13,6 +13,8 @@ interface SearchStore {
 
 const defaultFilters: SearchFilters = {
   mode: 'rent',
+  location: '',
+  category: ''
 }
 
 export const useSearchStore = create<SearchStore>((set) => ({

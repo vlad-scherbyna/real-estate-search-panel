@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['var(--font-plus-jakarta-sans)', 'system-ui', 'sans-serif'],
       },
       colors: {
         gray: {
