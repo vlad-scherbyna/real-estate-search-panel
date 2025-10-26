@@ -51,8 +51,6 @@ export const tenementApi = {
   search: async (filter: SearchFilter, page = 1, pageSize = 20): Promise<SearchResponse> => {
     const searchRequest = buildSearchRequest(filter, page, pageSize)
 
-    console.log('🔍 API Request:', searchRequest)
-
     const response = await apiClient.post('/tenement/search', searchRequest)
     return response.data
   },

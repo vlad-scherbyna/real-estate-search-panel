@@ -14,9 +14,20 @@ export interface LocationFieldProps {
 export function LocationField({ className }: LocationFieldProps) {
   const { filters, updateFilter, setSelectedDistrictIds } = useSearchStore()
   const [isOpen, setIsOpen] = useState(false)
+
+  // Initialize with current filter value and keep in sync
   const [query, setQuery] = useState(filters.location || '')
+
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Keep local query in sync with filters.location when it changes externally (URL sync)
+  const displayValue = filters.location || ''
+
+  // Update local query if it's different from filter (URL sync case)
+  if (query !== displayValue && !isOpen) {
+    setQuery(displayValue)
+  }
 
   // Debounce search query for backend requests
   const debouncedQuery = useDebounce(query, 300)

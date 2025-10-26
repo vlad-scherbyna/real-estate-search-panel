@@ -1,6 +1,8 @@
+
 import { useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSearchStore } from '@/store/search'
+import { SearchMode } from '@/types/tenement-api'
 
 export const useUrlSync = () => {
   const router = useRouter()
@@ -12,7 +14,7 @@ export const useUrlSync = () => {
   const buildUrlParams = useCallback(() => {
     const params = new URLSearchParams()
 
-    if (filters.mode && filters.mode !== 'ai') {
+    if (filters.mode) {
       params.set('mode', filters.mode)
     }
 
@@ -28,8 +30,8 @@ export const useUrlSync = () => {
     const mode = searchParams.get('mode')
     const location = searchParams.get('location')
 
-    if (mode && ['rent', 'buy', 'ai'].includes(mode) && mode !== filters.mode) {
-      updateFilter('mode', mode as 'rent' | 'buy' | 'ai')
+    if (mode && Object.values(SearchMode).includes(mode as SearchMode) && mode !== filters.mode) {
+      updateFilter('mode', mode as SearchMode)
     }
 
     if (location !== null && location !== filters.location) {

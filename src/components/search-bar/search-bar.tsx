@@ -7,7 +7,7 @@ import { PriceField } from './price-field'
 import { cn } from '@/lib/utils'
 import { useSearchStore } from '@/store/search'
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { SearchFilter, SearchResponse } from '@/types/tenement-api'
+import { SearchFilter, SearchResponse, SearchMode } from '@/types/tenement-api'
 import { useTenementSearch } from '@/api/tenement/tenement'
 import { useUrlSync } from '@/hooks/use-url-sync'
 
@@ -29,7 +29,7 @@ export function SearchBar({ className }: SearchBarProps) {
   // convert filter for api format
   const apiFilter: SearchFilter = useMemo(() => {
     const filter: SearchFilter = {
-      rentType: [filters.mode === 'ai' ? 'rent' : filters.mode],
+      rentType: [filters.mode === SearchMode.AI ? SearchMode.RENT : filters.mode],
       status: 'active',
       locationAccuracy: [9, 5, 1, 0],
     }
@@ -72,7 +72,6 @@ export function SearchBar({ className }: SearchBarProps) {
       pageSize: 20,
     }, {
       onSuccess: (data) => {
-        console.log('🎉 Search completed:', data)
         setSearchResults(data)
       }
     })
@@ -90,11 +89,11 @@ export function SearchBar({ className }: SearchBarProps) {
 
   const getButtonColor = () => {
     switch (filters.mode) {
-      case 'rent':
+      case SearchMode.RENT:
         return 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500'
-      case 'buy':
+      case SearchMode.BUY:
         return 'bg-green-600 hover:bg-green-700 focus-visible:ring-green-500'
-      case 'ai':
+      case SearchMode.AI:
         return 'bg-purple-600 hover:bg-purple-700 focus-visible:ring-purple-500'
       default:
         return 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500'

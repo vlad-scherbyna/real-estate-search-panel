@@ -1,7 +1,14 @@
+// Search mode enum
+export enum SearchMode {
+  RENT = 'rent',
+  BUY = 'buy',
+  AI = 'ai'
+}
+
 export interface SearchFilter {
   withinId?: string[]  // Array with IDs of selected districts
   type?: number[]      // Array with ID of selected type
-  rentType?: ('rent' | 'buy')[]  // Array with rent or buy
+  rentType?: SearchMode[]// Array with rent or buy
   rent?: [number, number] // Array with min and max rent
   search?: string      // Search term
   status?: 'active'    // Property status
@@ -9,7 +16,7 @@ export interface SearchFilter {
 }
 
 export interface SearchFilters {
-  mode: 'rent' | 'buy' | 'ai'
+  mode: SearchMode
   location: string
   category: string
   priceRange?: [number, number]
@@ -22,7 +29,7 @@ export interface SearchRequest {
     locationAccuracy: 'active' | (9 | 5 | 1 | 0)[]
     withinId?: string[]
     type?: number[]
-    rentType?: ('rent' | 'buy')[]
+    rentType?: SearchMode[]
     rent?: [number, number]
     search?: string
   }

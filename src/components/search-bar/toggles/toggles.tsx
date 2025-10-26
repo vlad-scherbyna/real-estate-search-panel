@@ -4,19 +4,20 @@
 import { useSearchStore } from '@/store/search'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { SearchMode } from "@/types/tenement-api";
 
 export interface TogglesProps {
   className?: string
 }
 
 const toggleOptions = [
-  { value: 'rent' as const, label: 'Rent' },
-  { value: 'buy' as const, label: 'Buy' },
+  { value: SearchMode.RENT, label: 'Rent' },
+  { value: SearchMode.BUY, label: 'Buy' },
   {
-    value: 'ai' as const,
+    value: SearchMode.AI as const,
     label: (
       <>
-        Lystio <span className="text-purple-700">AI</span>
+        Lystio&nbsp;<span className="text-purple-700">AI</span>
       </>
     )
   },

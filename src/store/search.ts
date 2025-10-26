@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { SearchFilters } from "@/types/tenement-api";
+import { SearchFilters, SearchMode } from "@/types/tenement-api";
 
 interface SearchStore {
   filters: SearchFilters
@@ -12,7 +12,7 @@ interface SearchStore {
 }
 
 const defaultFilters: SearchFilters = {
-  mode: 'rent',
+  mode: SearchMode.RENT,
   location: '',
   category: ''
 }
