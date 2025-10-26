@@ -1,7 +1,6 @@
 # Real Estate Search Platform
 
-Modern real estate search application with interactive map integration and advanced filtering capabilities.
-Demo: real-estate-search-panel-4hw2.vercel.app
+Modern real estate search application with interactive map integration and advanced filtering capabilities. Demo - https://real-estate-search-panel-4hw2.vercel.app
 
 ## Features
 
