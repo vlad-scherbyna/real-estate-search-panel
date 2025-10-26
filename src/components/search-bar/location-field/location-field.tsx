@@ -1,60 +1,45 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useCombinedLocationSuggestions } from '@/api/geo/geo'
+import { LocationSuggestion } from '@/types/geo-api'
 import { useSearchStore } from '@/store/search'
 import { cn } from '@/lib/utils'
-import { useMapboxSearch } from "@/api/mapbox";
-import { usePopularBoundaries, useRecentSearches } from "@/api/geo/geo";
 
 export interface LocationFieldProps {
   className?: string
 }
 
 export function LocationField({ className }: LocationFieldProps) {
-  const { filters, updateFilter } = useSearchStore()
+  const { filters, updateFilter, setSelectedDistrictIds } = useSearchStore()
   const [isOpen, setIsOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(filters.location || '')
+  const [query, setQuery] = useState(filters.location || '')
   const inputRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // API calls
-  const { data: mapboxSuggestions = [], isLoading: isSearching } = useMapboxSearch(inputValue)
-  const { data: recentSearches = [] } = useRecentSearches()
-  const { data: popularBoundaries = [] } = usePopularBoundaries()
+  // Get combined suggestions from both APIs
+  const { data: allSuggestions, isLoading, error } = useCombinedLocationSuggestions()
 
-  // Combine suggestions based on input
-  const suggestions = useMemo(() => {
-    if (inputValue.length >= 2) {
-      // Show Mapbox results when user is typing
-      return mapboxSuggestions.map(suggestion => ({
-        id: suggestion.id,
-        name: suggestion.place_name,
-        type: 'mapbox' as const,
-        data: suggestion,
-      }))
-    } else {
-      // Show recent searches and popular locations when input is empty
-      const recent = recentSearches.slice(0, 3).map(search => ({
-        id: search.id,
-        name: search.query,
-        type: 'recent' as const,
-        data: search,
-      }))
+  // Filter suggestions based on query
+  const filteredSuggestions = allSuggestions?.filter(suggestion =>
+    suggestion.name.toLowerCase().includes(query.toLowerCase())
+  ) || []
 
-      const popular = popularBoundaries.slice(0, 5).map(boundary => ({
-        id: boundary.id,
-        name: boundary.name,
-        type: 'popular' as const,
-        data: boundary,
-      }))
+  // Group suggestions by type - только 2 группы
+  const groupedSuggestions = {
+    recent: filteredSuggestions.filter(s => s.type === 'recent'),
+    popular: filteredSuggestions.filter(s => s.type === 'popular'),
+  }
 
-      return [...recent, ...popular]
-    }
-  }, [inputValue, mapboxSuggestions, recentSearches, popularBoundaries])
-
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false)
       }
     }
@@ -63,113 +48,123 @@ export function LocationField({ className }: LocationFieldProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleSelect = (suggestion: typeof suggestions[0]) => {
-    setInputValue(suggestion.name)
-    updateFilter('location', suggestion.name)
-    setIsOpen(false)
-  }
-
-  const handleClear = () => {
-    setInputValue('')
-    updateFilter('location', undefined)
-    inputRef.current?.focus()
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value)
+  const handleInputChange = (value: string) => {
+    setQuery(value)
+    updateFilter('location', value)
     setIsOpen(true)
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
+  const handleSuggestionClick = (suggestion: LocationSuggestion) => {
+    setQuery(suggestion.name)
+    updateFilter('location', suggestion.name)
+
+    // Set district IDs based on selection
+    if (suggestion.type === 'popular') {
+      // For cities, set the city ID
+      setSelectedDistrictIds([suggestion.id])
+    } else {
+      // For recent (mapbox results), clear district selection
+      setSelectedDistrictIds([])
+    }
+
+    setIsOpen(false)
+    inputRef.current?.blur()
+  }
+
+  const getSuggestionIcon = (suggestion: LocationSuggestion) => {
+    switch (suggestion.type) {
       case 'recent':
-        return '🕒'
+        return (
+          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
       case 'popular':
-        return '⭐'
-      default:
-        return '📍'
+        return (
+          <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        )
     }
   }
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'recent':
-        return 'Recent'
-      case 'popular':
-        return 'Popular'
-      default:
-        return 'Location'
-    }
-  }
+  const renderSuggestionGroup = (title: string, suggestions: LocationSuggestion[]) => {
+    if (suggestions.length === 0) return null
 
-  // console.log(suggestions)
+    return (
+      <div key={title}>
+        <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+          {title}
+        </div>
+        {suggestions.map((suggestion) => (
+          <button
+            key={suggestion.id}
+            onClick={() => handleSuggestionClick(suggestion)}
+            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+          >
+            {getSuggestionIcon(suggestion)}
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-gray-900 truncate">{suggestion.name}</div>
+              {suggestion.label && (
+                <div className="text-sm text-gray-500 truncate">{suggestion.label}</div>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
+    <div className={cn('relative', className)}>
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
-
         <input
           ref={inputRef}
           type="text"
-          value={inputValue}
-          onChange={handleInputChange}
+          value={query}
+          onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => setIsOpen(true)}
-          placeholder="Where are you looking?"
+          placeholder="Search locations..."
           className={cn(
-            'w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg',
-            'focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-            'placeholder-gray-400 text-gray-900',
-            'transition-all duration-200'
+            'w-full px-4 py-2 pr-10 text-sm border border-gray-200 rounded-lg',
+            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder-gray-500'
           )}
         />
-
-        {inputValue && (
-          <button
-            onClick={handleClear}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-600"
-          >
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-
-        {/* Loading indicator */}
-        {isSearching && inputValue.length >= 2 && (
-          <div className="absolute inset-y-0 right-10 flex items-center">
-            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-          </div>
-        )}
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       {/* Dropdown */}
-      {isOpen && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-          {inputValue.length < 2 && (
-            <div className="px-4 py-2 text-xs font-medium text-gray-500 border-b border-gray-100">
-              {recentSearches.length > 0 ? 'Recent & Popular' : 'Popular Locations'}
+      {isOpen && (
+        <div
+          ref={dropdownRef}
+          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-auto"
+        >
+          {isLoading ? (
+            <div className="px-3 py-4 text-center text-gray-500">
+              <div className="inline-flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                Loading...
+              </div>
+            </div>
+          ) : error ? (
+            <div className="px-3 py-4 text-center text-red-500">
+              Failed to load suggestions
+            </div>
+          ) : filteredSuggestions.length === 0 ? (
+            <div className="px-3 py-4 text-center text-gray-500">
+              No locations found
+            </div>
+          ) : (
+            <div>
+              {renderSuggestionGroup('Recent', groupedSuggestions.recent)}
+              {renderSuggestionGroup('Popular', groupedSuggestions.popular)}
             </div>
           )}
-
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.id}
-              onClick={() => handleSelect(suggestion)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
-            >
-              <span className="text-sm">{getTypeIcon(suggestion.type)}</span>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900 truncate">{suggestion.name}</div>
-                <div className="text-sm text-gray-500">{getTypeLabel(suggestion.type)}</div>
-              </div>
-            </button>
-          ))}
         </div>
       )}
     </div>

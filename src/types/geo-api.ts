@@ -1,56 +1,34 @@
-// Geo API types
-export interface RecentSearch {
-  id: string
-  query: string
-  timestamp: string
-  location?: {
-    lat: number
-    lng: number
-  }
-}
-
-export interface District {
-  id: string
+// Recent search API response item
+export interface RecentSearchItem {
+  mapboxId: string
+  type: 'locality' | 'place'
   name: string
-  type: 'district' | 'city' | 'neighborhood'
-  boundaries?: {
-    lat: number
-    lng: number
-  }[]
+  pt: [number, number] // [lng, lat]
 }
 
-export interface PopularBoundary {
-  id: string
+// Popular boundary child (district)
+export interface PopularBoundaryChild {
   name: string
-  type: string
-  center: {
-    lat: number
-    lng: number
-  }
+  altName: string
+  id: string
+  postal_code: string
+  urlSegment: string | null
 }
 
-// Filter types for API
-export interface SearchFilter {
-  withinId?: string[]
-  type?: number[]
-  rentType?: ('rent' | 'buy')[]
-  rent?: [number, number]
+// Popular boundary API response item
+export interface PopularBoundaryItem {
+  name: string
+  altName: string
+  id: string
+  children: PopularBoundaryChild[]
+  urlSegment: string
 }
 
-// Histogram types
-export interface HistogramBucket {
-  min: number
-  max: number
-  count: number
-}
-
-export interface PriceHistogram {
-  min: number
-  max: number
-  buckets: HistogramBucket[]
-}
-
-// Count response
-export interface TenementCount {
-  count: number
+// Simplified suggestion type for UI (only 2 categories)
+export interface LocationSuggestion {
+  id: string
+  name: string // для recent - просто name, для popular - altName
+  type: 'recent' | 'popular'
+  label?: string // для popular - показываем кол-во районов
+  location?: [number, number] // [lng, lat] только для recent
 }

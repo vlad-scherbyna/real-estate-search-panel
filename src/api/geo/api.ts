@@ -1,15 +1,15 @@
 import { apiClient } from '../api-client'
-import { PopularBoundary, RecentSearch } from "@/types/geo-api";
+import { RecentSearchItem, PopularBoundaryItem } from '@/types/geo-api'
 
 export const geoApi = {
   // Get recent searches
-  getRecentSearches: async (): Promise<RecentSearch[]> => {
+  getRecentSearches: async (): Promise<RecentSearchItem[]> => {
     const response = await apiClient.get('/geo/search/recent')
     return response.data
   },
 
   // Get popular boundaries (cities/districts)
-  getPopularBoundaries: async (): Promise<PopularBoundary[]> => {
+  getPopularBoundaries: async (): Promise<PopularBoundaryItem[]> => {
     const response = await apiClient.get('/geo/boundary/popular')
     return response.data
   },
