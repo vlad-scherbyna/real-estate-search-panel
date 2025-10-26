@@ -1,13 +1,12 @@
-
 import { apiClient } from '../api-client'
 import { SearchFilter, SearchRequest, SearchResponse, TenementCount } from '@/types/tenement-api'
 
-// Helper function to convert our simplified filter to full API request
+// Helper function to build search request
 const buildSearchRequest = (filter: SearchFilter, page = 1, pageSize = 20): SearchRequest => {
   const request: SearchRequest = {
     filter: {
       status: 'active',
-      locationAccuracy: 'active',
+      locationAccuracy: [9, 5, 1, 0], // Proper array format instead of 'active'
     },
     sort: {
       createdAt: 'desc', // Default sort by newest
@@ -39,35 +38,34 @@ const buildSearchRequest = (filter: SearchFilter, page = 1, pageSize = 20): Sear
     request.filter.search = filter.search
   }
 
+  // Override locationAccuracy if provided in filter
+  if (filter.locationAccuracy?.length) {
+    request.filter.locationAccuracy = filter.locationAccuracy
+  }
+
   return request
 }
 
 export const tenementApi = {
-  // Main search endpoint
+  // Search tenements
   search: async (filter: SearchFilter, page = 1, pageSize = 20): Promise<SearchResponse> => {
-    try {
-      const searchRequest = buildSearchRequest(filter, page, pageSize)
-      console.log('🔍 Search request:', searchRequest)
+    const searchRequest = buildSearchRequest(filter, page, pageSize)
 
-      const response = await apiClient.post('/tenement/search', searchRequest)
-      return response.data
-    } catch (error) {
-      console.error('Failed to search tenements:', error)
-      throw error
-    }
+    console.log('🔍 API Request:', searchRequest)
+
+    const response = await apiClient.post('/tenement/search', searchRequest)
+    return response.data
   },
 
-  // Count endpoint - теперь также использует полный SearchRequest
-  getTenementCount: async (filter: SearchFilter): Promise<TenementCount> => {
-    try {
-      const searchRequest = buildSearchRequest(filter, 1, 1) // Minimal paging for count
-      console.log('📊 Count request:', searchRequest)
+  // Get count of tenements matching filter
+  getCount: async (filter: SearchFilter): Promise<TenementCount> => {
+    const searchRequest = buildSearchRequest(filter) // Only need count, not items
 
-      const response = await apiClient.post('/tenement/search/count', searchRequest)
-      return response.data
-    } catch (error) {
-      console.error('Failed to fetch tenement count:', error)
-      throw error
-    }
+    // Use different endpoint or add count flag
+    const response = await apiClient.post('/tenement/count', searchRequest.filter)
+    return response.data
   },
+
+  // Export the helper for external use if needed
+  buildSearchRequest,
 }

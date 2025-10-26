@@ -1,34 +1,55 @@
-import { useQuery } from '@tanstack/react-query'
-import { tenementApi } from './api';
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { tenementApi } from './api'
 import { SearchFilter } from '@/types/tenement-api'
 
+// Query keys
 const tenementKeys = {
   all: ['tenement'] as const,
   search: (filter: SearchFilter, page: number, pageSize: number) =>
     [...tenementKeys.all, 'search', filter, page, pageSize] as const,
-  count: (filter: SearchFilter) => [...tenementKeys.all, 'count', filter] as const,
+  count: (filter: SearchFilter) =>
+    [...tenementKeys.all, 'count', filter] as const,
 }
 
-// Main search hook
-export const useTenementSearch = (filter: SearchFilter, page = 1, pageSize = 20, enabled = false) => {
-  return useQuery({
-    queryKey: tenementKeys.search(filter, page, pageSize),
-    queryFn: () => tenementApi.search(filter, page, pageSize),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    enabled: enabled && !!filter.rentType?.length, // Only search when enabled and rent type is selected
-  })
-}
-
-// Count hook (for displaying total results)
+// Hook for getting tenement count
 export const useTenementCount = (filter: SearchFilter) => {
   return useQuery({
     queryKey: tenementKeys.count(filter),
-    queryFn: () => tenementApi.getTenementCount(filter),
+    queryFn: () => tenementApi.getCount(filter),
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
-    enabled: !!filter.rentType?.length, // Only fetch if rent type is selected
   })
 }
 
+// Hook for tenement search with mutation (triggered manually)
+export const useTenementSearch = () => {
+  return useMutation({
+    mutationFn: ({ filter, page = 1, pageSize = 20 }: {
+      filter: SearchFilter
+      page?: number
+      pageSize?: number
+    }) => tenementApi.search(filter, page, pageSize),
+    onSuccess: (data, variables) => {
+      console.log('🎉 Search completed:', data)
+      console.log('📋 Search variables:', variables)
+    },
+    onError: (error, variables) => {
+      console.error('❌ Search failed:', error)
+      console.error('📋 Search variables:', variables)
+    },
+  })
+}
+
+// Hook for background search query (auto-updating)
+export const useTenementSearchQuery = (filter: SearchFilter, page = 1, pageSize = 20) => {
+  return useQuery({
+    queryKey: tenementKeys.search(filter, page, pageSize),
+    queryFn: () => tenementApi.search(filter, page, pageSize),
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: false, // Disabled by default, enable manually when needed
+  })
+}
+
+// Export query keys for invalidation
 export { tenementKeys }

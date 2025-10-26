@@ -6,39 +6,39 @@ import { CategoryField } from './category-field'
 import { PriceField } from './price-field'
 import { cn } from '@/lib/utils'
 import { useSearchStore } from '@/store/search'
-import { useMemo, useState } from 'react'
-import { SearchFilter, SearchResponse } from '@/types/tenement-api'
-import { tenementApi } from "@/api/tenement/api";
-import { useTenementCount } from "@/api/tenement";
+import { useMemo } from 'react'
+import { SearchFilter } from '@/types/tenement-api'
+import { useTenementCount, useTenementSearch } from '@/api/tenement/tenement'
 
 export interface SearchBarProps {
   className?: string
-  onSearch?: (filter: SearchFilter) => void
-  onResults?: (results: SearchResponse) => void
 }
 
-export function SearchBar({ className, onSearch, onResults }: SearchBarProps) {
+export function SearchBar({ className }: SearchBarProps) {
   const { filters, selectedDistrictIds } = useSearchStore()
-  const [isSearching, setIsSearching] = useState(false)
+
+  // Hook for search mutation
+  const searchMutation = useTenementSearch()
 
   // Конвертируем наши фильтры в формат API
   const apiFilter: SearchFilter = useMemo(() => {
     const filter: SearchFilter = {
       rentType: [filters.mode === 'ai' ? 'rent' : filters.mode],
       status: 'active',
+      locationAccuracy: [9, 5, 1, 0],
     }
 
-    // Добавляем district IDs если есть
+    // add district IDs if exist
     if (selectedDistrictIds.length > 0) {
       filter.withinId = selectedDistrictIds
     }
 
-    // Добавляем category если выбран
+    // add category if exist
     if (filters.category) {
       filter.type = [parseInt(filters.category)]
     }
 
-    // Добавляем location как search term если нет district ID
+    // add location as search term if no district ID
     if (filters.location && selectedDistrictIds.length === 0) {
       filter.search = filters.location
     }
@@ -46,38 +46,26 @@ export function SearchBar({ className, onSearch, onResults }: SearchBarProps) {
     return filter
   }, [filters.mode, filters.category, filters.location, selectedDistrictIds])
 
-  // Автоматически обновляем count при изменении фильтров
+  // count update
   const { data: countData, isLoading: isLoadingCount, error: countError } = useTenementCount(apiFilter)
 
-  // Прямое выполнение поиска без state management
-  const handleSearch = async () => {
+  const handleSearch = () => {
     console.log('🔍 Starting search with:')
     console.log('  - Filters:', filters)
     console.log('  - API Filter:', apiFilter)
     console.log('  - Selected District IDs:', selectedDistrictIds)
 
-    setIsSearching(true)
-
-    try {
-      // Прямой вызов API
-      const searchResult = await tenementApi.search(apiFilter, 1, 20)
-
-      console.log('📊 Search completed:', searchResult)
-
-      // Вызываем callbacks
-      if (onSearch) {
-        onSearch(apiFilter)
+    // Вызываем мутацию поиска
+    searchMutation.mutate({
+      filter: apiFilter,
+      page: 1,
+      pageSize: 20,
+    }, {
+      onSuccess: (data) => {
+        console.log(data)
+        // any callback
       }
-
-      if (onResults) {
-        onResults(searchResult)
-      }
-
-    } catch (error) {
-      console.error('Search failed:', error)
-    } finally {
-      setIsSearching(false)
-    }
+    })
   }
 
   const getResultsText = () => {
@@ -163,7 +151,7 @@ export function SearchBar({ className, onSearch, onResults }: SearchBarProps) {
           <div className="bg-white p-4 flex items-end">
             <button
               onClick={handleSearch}
-              disabled={isSearching}
+              disabled={searchMutation.isPending}
               className={cn(
                 'w-full flex items-center justify-center gap-2 px-6 py-3',
                 'font-semibold text-white rounded-lg',
@@ -173,7 +161,7 @@ export function SearchBar({ className, onSearch, onResults }: SearchBarProps) {
                 getButtonColor()
               )}
             >
-              {isSearching ? (
+              {searchMutation.isPending ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +169,7 @@ export function SearchBar({ className, onSearch, onResults }: SearchBarProps) {
                 </svg>
               )}
               <span className="hidden sm:inline">
-                {isSearching ? 'Searching...' : 'Search'}
+                {searchMutation.isPending ? 'Searching...' : 'Search'}
               </span>
             </button>
           </div>

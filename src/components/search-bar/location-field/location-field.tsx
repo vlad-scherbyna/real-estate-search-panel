@@ -73,6 +73,14 @@ export function LocationField({ className }: LocationFieldProps) {
     setIsOpen(true)
   }
 
+  const handleClear = () => {
+    setQuery('')
+    updateFilter('location', '')
+    setSelectedDistrictIds([])
+    setIsOpen(false)
+    inputRef.current?.focus()
+  }
+
   const handleSuggestionClick = (suggestion: LocationSuggestion) => {
     setQuery(suggestion.name)
     updateFilter('location', suggestion.name)
@@ -145,15 +153,34 @@ export function LocationField({ className }: LocationFieldProps) {
           onFocus={() => setIsOpen(true)}
           placeholder="Search locations..."
           className={cn(
-            'w-full px-4 py-2 pr-10 text-sm border border-gray-200 rounded-lg',
+            'w-full px-4 py-2 pr-20 text-sm border border-gray-200 rounded-lg', // Increased right padding for two icons
             'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
             'placeholder-gray-500'
           )}
         />
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+
+        {/* Right side icons container */}
+        <div className="absolute inset-y-0 right-0 flex items-center">
+          {/* Clear button - only show when there's text */}
+          {query && (
+            <button
+              onClick={handleClear}
+              className="p-1 mr-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+              type="button"
+              title="Clear search"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+
+          {/* Search icon */}
+          <div className="p-3">
+            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -181,7 +208,7 @@ export function LocationField({ className }: LocationFieldProps) {
           ) : (
             <div>
               {renderSuggestionGroup('Recent', groupedSuggestions.recent)}
-              {renderSuggestionGroup('Cities', groupedSuggestions.popular)}
+              {renderSuggestionGroup('Popular', groupedSuggestions.popular)}
             </div>
           )}
         </div>
