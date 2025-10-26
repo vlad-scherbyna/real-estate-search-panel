@@ -6,24 +6,85 @@ import { CategoryField } from './category-field'
 import { PriceField } from './price-field'
 import { cn } from '@/lib/utils'
 import { useSearchStore } from '@/store/search'
+import { useMemo, useState } from 'react'
+import { SearchFilter, SearchResponse } from '@/types/tenement-api'
+import { tenementApi } from "@/api/tenement/api";
+import { useTenementCount } from "@/api/tenement";
 
 export interface SearchBarProps {
   className?: string
+  onSearch?: (filter: SearchFilter) => void
+  onResults?: (results: SearchResponse) => void
 }
 
-export function SearchBar({ className }: SearchBarProps) {
-  const { filters } = useSearchStore()
+export function SearchBar({ className, onSearch, onResults }: SearchBarProps) {
+  const { filters, selectedDistrictIds } = useSearchStore()
+  const [isSearching, setIsSearching] = useState(false)
 
-  const handleSearch = () => {
-    console.log('Search with filters:', filters)
-    // Here you would implement actual search logic
+  // Конвертируем наши фильтры в формат API
+  const apiFilter: SearchFilter = useMemo(() => {
+    const filter: SearchFilter = {
+      rentType: [filters.mode === 'ai' ? 'rent' : filters.mode],
+      status: 'active',
+    }
+
+    // Добавляем district IDs если есть
+    if (selectedDistrictIds.length > 0) {
+      filter.withinId = selectedDistrictIds
+    }
+
+    // Добавляем category если выбран
+    if (filters.category) {
+      filter.type = [parseInt(filters.category)]
+    }
+
+    // Добавляем location как search term если нет district ID
+    if (filters.location && selectedDistrictIds.length === 0) {
+      filter.search = filters.location
+    }
+
+    return filter
+  }, [filters.mode, filters.category, filters.location, selectedDistrictIds])
+
+  // Автоматически обновляем count при изменении фильтров
+  const { data: countData, isLoading: isLoadingCount, error: countError } = useTenementCount(apiFilter)
+
+  // Прямое выполнение поиска без state management
+  const handleSearch = async () => {
+    console.log('🔍 Starting search with:')
+    console.log('  - Filters:', filters)
+    console.log('  - API Filter:', apiFilter)
+    console.log('  - Selected District IDs:', selectedDistrictIds)
+
+    setIsSearching(true)
+
+    try {
+      // Прямой вызов API
+      const searchResult = await tenementApi.search(apiFilter, 1, 20)
+
+      console.log('📊 Search completed:', searchResult)
+
+      // Вызываем callbacks
+      if (onSearch) {
+        onSearch(apiFilter)
+      }
+
+      if (onResults) {
+        onResults(searchResult)
+      }
+
+    } catch (error) {
+      console.error('Search failed:', error)
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   const getResultsText = () => {
     if (filters.mode === 'ai') {
       return 'AI-matched properties'
     }
-    return `${filters.mode} properties`
+    return `properties for ${filters.mode}`
   }
 
   const getLocationText = () => {
@@ -31,6 +92,36 @@ export function SearchBar({ className }: SearchBarProps) {
       return ` in ${filters.location}`
     }
     return ''
+  }
+
+  const getCategoryText = () => {
+    if (filters.category) {
+      return ` • Selected category`
+    }
+    return ''
+  }
+
+  const formatCount = (count: number) => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`
+    }
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}k`
+    }
+    return count.toLocaleString()
+  }
+
+  const getButtonColor = () => {
+    switch (filters.mode) {
+      case 'rent':
+        return 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500'
+      case 'buy':
+        return 'bg-green-600 hover:bg-green-700 focus-visible:ring-green-500'
+      case 'ai':
+        return 'bg-purple-600 hover:bg-purple-700 focus-visible:ring-purple-500'
+      default:
+        return 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500'
+    }
   }
 
   return (
@@ -72,20 +163,26 @@ export function SearchBar({ className }: SearchBarProps) {
           <div className="bg-white p-4 flex items-end">
             <button
               onClick={handleSearch}
+              disabled={isSearching}
               className={cn(
                 'w-full flex items-center justify-center gap-2 px-6 py-3',
                 'font-semibold text-white rounded-lg',
                 'transition-all duration-200 shadow-md hover:shadow-lg',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                filters.mode === 'rent' && 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500',
-                filters.mode === 'buy' && 'bg-green-600 hover:bg-green-700 focus-visible:ring-green-500',
-                filters.mode === 'ai' && 'bg-purple-600 hover:bg-purple-700 focus-visible:ring-purple-500'
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                getButtonColor()
               )}
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span className="hidden sm:inline">Search</span>
+              {isSearching ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              )}
+              <span className="hidden sm:inline">
+                {isSearching ? 'Searching...' : 'Search'}
+              </span>
             </button>
           </div>
         </div>
@@ -93,9 +190,20 @@ export function SearchBar({ className }: SearchBarProps) {
         {/* Results info */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
           <p className="text-sm text-gray-600">
-            <span className="font-semibold text-gray-900">12,453</span> verified listings for {getResultsText()}{getLocationText()}
-            {filters.category && (
-              <span className="text-gray-500"> • {filters.category}</span>
+            {isLoadingCount ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                <span className="font-semibold text-gray-900">Loading...</span>
+              </span>
+            ) : countError ? (
+              <span className="font-semibold text-red-600">Error loading count</span>
+            ) : (
+              <>
+                <span className="font-semibold text-gray-900">
+                  {formatCount(countData?.count || 0)}
+                </span>
+                {' '}verified listings for {getResultsText()}{getLocationText()}{getCategoryText()}
+              </>
             )}
           </p>
         </div>

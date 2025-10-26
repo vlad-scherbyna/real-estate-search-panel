@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { SearchFilters } from '@/types'
+import { SearchFilters } from '@/types/tenement-api'
 import { useSearchStore } from "@/store/search"
 
 export const useUrlSync = () => {
