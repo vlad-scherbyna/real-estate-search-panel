@@ -2,7 +2,6 @@ export interface SearchFilters {
   mode: 'rent' | 'buy' | 'ai'
   location?: string
   category?: string
-  priceRange?: string
   rooms?: number
   area?: [number, number]
   type?: 'apartment' | 'house' | 'commercial'
@@ -19,9 +18,4 @@ export interface Listing {
   coordinates: [number, number]
   type: 'apartment' | 'house' | 'commercial'
   mode: 'rent' | 'buy'
-}
-
-export interface PriceHistogramData {
-  range: [number, number]
-  count: number
 }

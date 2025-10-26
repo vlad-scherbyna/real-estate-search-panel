@@ -102,7 +102,7 @@ export function LocationField({ className }: LocationFieldProps) {
     }
   }
 
-  console.log(suggestions)
+  // console.log(suggestions)
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>

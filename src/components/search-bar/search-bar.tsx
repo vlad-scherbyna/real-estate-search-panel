@@ -19,6 +19,20 @@ export function SearchBar({ className }: SearchBarProps) {
     // Here you would implement actual search logic
   }
 
+  const getResultsText = () => {
+    if (filters.mode === 'ai') {
+      return 'AI-matched properties'
+    }
+    return `${filters.mode} properties`
+  }
+
+  const getLocationText = () => {
+    if (filters.location) {
+      return ` in ${filters.location}`
+    }
+    return ''
+  }
+
   return (
     <div className={cn('w-full max-w-6xl mx-auto', className)}>
       {/* Header with toggles */}
@@ -79,7 +93,10 @@ export function SearchBar({ className }: SearchBarProps) {
         {/* Results info */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
           <p className="text-sm text-gray-600">
-            <span className="font-semibold text-gray-900">12,453</span> verified listings for {filters.mode === 'ai' ? 'AI-matched' : filters.mode} properties
+            <span className="font-semibold text-gray-900">12,453</span> verified listings for {getResultsText()}{getLocationText()}
+            {filters.category && (
+              <span className="text-gray-500"> • {filters.category}</span>
+            )}
           </p>
         </div>
       </div>

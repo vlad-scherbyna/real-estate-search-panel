@@ -10,7 +10,7 @@ export const geoApi = {
 
   // Get popular boundaries (cities/districts)
   getPopularBoundaries: async (): Promise<PopularBoundary[]> => {
-    const response = await apiClient.get('/geo/boundaries/popular')
+    const response = await apiClient.get('/geo/boundary/popular')
     return response.data
   },
 }

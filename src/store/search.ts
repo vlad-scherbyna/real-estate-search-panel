@@ -1,52 +1,34 @@
 import { create } from 'zustand'
 import { SearchFilters } from '@/types'
 
-interface SearchState {
+interface SearchStore {
   filters: SearchFilters
   isDirty: boolean
   updateFilter: <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => void
-  resetFilters: () => void
   setFilters: (filters: Partial<SearchFilters>) => void
+  resetFilters: () => void
 }
 
 const defaultFilters: SearchFilters = {
   mode: 'rent',
-  location: undefined,
-  category: undefined,
-  priceRange: undefined,
-  rooms: undefined,
-  area: undefined,
-  type: undefined,
 }
 
-export const useSearchStore = create<SearchState>((set) => ({
+export const useSearchStore = create<SearchStore>((set) => ({
   filters: defaultFilters,
   isDirty: false,
-
-  updateFilter: (key, value) => {
+  updateFilter: (key, value) =>
     set((state) => ({
-      filters: {
-        ...state.filters,
-        [key]: value,
-      },
+      filters: { ...state.filters, [key]: value },
       isDirty: true,
-    }))
-  },
-
-  resetFilters: () => {
+    })),
+  setFilters: (newFilters) =>
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+      isDirty: true,
+    })),
+  resetFilters: () =>
     set({
       filters: defaultFilters,
-      isDirty: false,
-    })
-  },
-
-  setFilters: (newFilters) => {
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        ...newFilters,
-      },
       isDirty: true,
-    }))
-  },
+    }),
 }))
