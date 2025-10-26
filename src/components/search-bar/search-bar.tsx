@@ -6,9 +6,10 @@ import { CategoryField } from './category-field'
 import { PriceField } from './price-field'
 import { cn } from '@/lib/utils'
 import { useSearchStore } from '@/store/search'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { SearchFilter, SearchResponse } from '@/types/tenement-api'
 import { useTenementSearch } from '@/api/tenement/tenement'
+import { useUrlSync } from '@/hooks/use-url-sync'
 
 export interface SearchBarProps {
   className?: string
@@ -17,9 +18,10 @@ export interface SearchBarProps {
 export function SearchBar({ className }: SearchBarProps) {
   const { filters, selectedDistrictIds } = useSearchStore()
   const [searchResults, setSearchResults] = useState<SearchResponse>()
+  const previousMode = useRef(filters.mode)
 
   // URL sync
-  // useUrlSync()
+  const { syncAllToUrl } = useUrlSync()
 
   // Hook for search mutation
   const searchMutation = useTenementSearch()
@@ -44,7 +46,26 @@ export function SearchBar({ className }: SearchBarProps) {
     return filter
   }, [filters.mode, filters.location, selectedDistrictIds])
 
+  // Auto-search when mode changes (but not on initial render)
+  useEffect(() => {
+    if (previousMode.current !== filters.mode) {
+      searchMutation.mutate({
+        filter: apiFilter,
+        page: 1,
+        pageSize: 20,
+      }, {
+        onSuccess: (data) => {
+          setSearchResults(data)
+        }
+      })
+    }
+    previousMode.current = filters.mode
+  }, [filters.mode, apiFilter, searchMutation])
+
   const handleSearch = () => {
+    // Sync all filters to URL before search
+    syncAllToUrl()
+
     searchMutation.mutate({
       filter: apiFilter,
       page: 1,

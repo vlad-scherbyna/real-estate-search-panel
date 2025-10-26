@@ -1,56 +1,57 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSearchStore } from '@/store/search'
 
 export const useUrlSync = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { filters, updateFilter, isDirty } = useSearchStore()
+  const { filters, updateFilter } = useSearchStore()
+  const isInitialLoad = useRef(true)
 
-  // Sync URL to store on mount and URL changes
-  useEffect(() => {
-    let hasUpdates = false
-
-    // Mode (rent/buy/ai)
-    const mode = searchParams.get('mode')
-    if (mode && ['rent', 'buy', 'ai'].includes(mode) && mode !== filters.mode) {
-      updateFilter('mode', mode as 'rent' | 'buy' | 'ai')
-      hasUpdates = true
-    }
-
-    // Location
-    const location = searchParams.get('location')
-    if (location && location !== filters.location) {
-      updateFilter('location', location)
-      hasUpdates = true
-    }
-
-    // Only update if we actually have changes to prevent infinite loops
-    console.log('URL sync: hasUpdates =', hasUpdates)
-  }, [searchParams, updateFilter, filters.mode, filters.location, filters.category, filters.priceRange])
-
-  // Sync store to URL when filters change
-  useEffect(() => {
-    if (!isDirty) return
-
+  // Helper function to build URL params
+  const buildUrlParams = useCallback(() => {
     const params = new URLSearchParams()
 
-    // Add non-empty filter values to URL
     if (filters.mode && filters.mode !== 'ai') {
       params.set('mode', filters.mode)
     }
 
-    if (filters.location) {
-      params.set('location', filters.location)
+    if (filters.location?.trim()) {
+      params.set('location', filters.location.trim())
     }
 
-    // Build URL
-    const queryString = params.toString()
-    const url = queryString ? `?${queryString}` : window.location.pathname
+    return params.toString() ? `?${params.toString()}` : window.location.pathname
+  }, [filters.mode, filters.location])
 
-    // Update URL without causing a navigation
+  // Sync URL params to store on mount/URL change (only from URL changes)
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    const location = searchParams.get('location')
+
+    if (mode && ['rent', 'buy', 'ai'].includes(mode) && mode !== filters.mode) {
+      updateFilter('mode', mode as 'rent' | 'buy' | 'ai')
+    }
+
+    if (location !== null && location !== filters.location) {
+      updateFilter('location', location)
+    }
+
+    isInitialLoad.current = false
+  }, [filters.location, filters.mode, searchParams, updateFilter])
+
+  // Sync store to URL only after initial load and not during URL->store sync
+  useEffect(() => {
+    if (isInitialLoad.current) return
+
+    const url = buildUrlParams()
     router.replace(url, { scroll: false })
+  }, [filters.mode, filters.location, buildUrlParams, router])
 
-    console.log('Syncing filters to URL:', url)
-  }, [filters.mode, filters.location, filters.category, filters.priceRange, isDirty, router])
+  // Manual sync function
+  const syncAllToUrl = useCallback(() => {
+    const url = buildUrlParams()
+    router.replace(url, { scroll: false })
+  }, [buildUrlParams, router])
+
+  return { syncAllToUrl }
 }
