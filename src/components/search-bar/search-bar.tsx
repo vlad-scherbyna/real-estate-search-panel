@@ -28,65 +28,25 @@ export function SearchBar({ className }: SearchBarProps) {
       locationAccuracy: [9, 5, 1, 0],
     }
 
-    // add district IDs if exist
     if (selectedDistrictIds.length > 0) {
       filter.withinId = selectedDistrictIds
     }
 
-    // add category if exist
-    if (filters.category) {
-      filter.type = [parseInt(filters.category)]
-    }
-
-    // add location as search term if no district ID
     if (filters.location && selectedDistrictIds.length === 0) {
       filter.search = filters.location
     }
 
     return filter
-  }, [filters.mode, filters.category, filters.location, selectedDistrictIds])
+  }, [filters.mode, filters.location, selectedDistrictIds])
 
-  // count update
-  const { data: countData, isLoading: isLoadingCount, error: countError } = useTenementCount(apiFilter)
+  const { data: countData, isLoading: isLoadingCount } = useTenementCount(apiFilter)
 
   const handleSearch = () => {
-    console.log('🔍 Starting search with:')
-    console.log('  - Filters:', filters)
-    console.log('  - API Filter:', apiFilter)
-    console.log('  - Selected District IDs:', selectedDistrictIds)
-
-    // Вызываем мутацию поиска
     searchMutation.mutate({
       filter: apiFilter,
       page: 1,
       pageSize: 20,
-    }, {
-      onSuccess: (data) => {
-        console.log(data)
-        // any callback
-      }
     })
-  }
-
-  const getResultsText = () => {
-    if (filters.mode === 'ai') {
-      return 'AI-matched properties'
-    }
-    return `properties for ${filters.mode}`
-  }
-
-  const getLocationText = () => {
-    if (filters.location) {
-      return ` in ${filters.location}`
-    }
-    return ''
-  }
-
-  const getCategoryText = () => {
-    if (filters.category) {
-      return ` • Selected category`
-    }
-    return ''
   }
 
   const formatCount = (count: number) => {
@@ -131,7 +91,7 @@ export function SearchBar({ className }: SearchBarProps) {
             <LocationField />
           </div>
 
-          {/* Category Field */}
+          {/* Property Type Field */}
           <div className="bg-white p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Property Type
@@ -183,14 +143,13 @@ export function SearchBar({ className }: SearchBarProps) {
                 <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
                 <span className="font-semibold text-gray-900">Loading...</span>
               </span>
-            ) : countError ? (
-              <span className="font-semibold text-red-600">Error loading count</span>
             ) : (
               <>
                 <span className="font-semibold text-gray-900">
                   {formatCount(countData?.count || 0)}
                 </span>
-                {' '}verified listings for {getResultsText()}{getLocationText()}{getCategoryText()}
+                {' '}verified listings for {filters.mode === 'ai' ? 'AI-matched properties' : `properties for ${filters.mode}`}
+                {filters.location && ` in ${filters.location}`}
               </>
             )}
           </p>

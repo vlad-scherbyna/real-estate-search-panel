@@ -62,7 +62,7 @@ export const tenementApi = {
     const searchRequest = buildSearchRequest(filter) // Only need count, not items
 
     // Use different endpoint or add count flag
-    const response = await apiClient.post('/tenement/count', searchRequest.filter)
+    const response = await apiClient.post('/tenement/search/count', searchRequest.filter)
     return response.data
   },
 
