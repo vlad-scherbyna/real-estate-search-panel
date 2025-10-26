@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useSearchStore } from '@/store/search'
@@ -11,15 +12,22 @@ export interface TogglesProps {
 const toggleOptions = [
   { value: 'rent' as const, label: 'Rent' },
   { value: 'buy' as const, label: 'Buy' },
-  { value: 'ai' as const, label: 'Lystio AI'},
+  {
+    value: 'ai' as const,
+    label: (
+      <>
+        Lystio <span className="text-purple-700">AI</span>
+      </>
+    )
+  },
 ] as const
 
 export function Toggles({ className }: TogglesProps) {
   const { filters, updateFilter } = useSearchStore()
 
   return (
-    <div className={cn('flex items-center', className)}>
-      <div className="relative flex bg-gray-100/70 rounded-full p-2">
+    <div className={cn('flex items-center justify-center', className)}>
+      <div className="relative flex bg-gray-100 rounded-full p-1 gap-1 border border-purple-200">
         {toggleOptions.map((option) => {
           const isActive = filters.mode === option.value
           return (
@@ -27,20 +35,17 @@ export function Toggles({ className }: TogglesProps) {
               key={option.value}
               onClick={() => updateFilter('mode', option.value)}
               className={cn(
-                'relative px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 min-w-[80px]',
+                'relative px-4 py-2 text-sm font-medium rounded-full cursor-pointer transition-colors duration-200',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
                 isActive
-                  ? 'text-black z-10'
+                  ? 'text-dark z-10'
                   : 'text-gray-600 hover:text-gray-900'
               )}
             >
               {isActive && (
                 <motion.div
                   layoutId="toggle-background"
-                  className={cn(
-                    "absolute inset-0 bg-white rounded-full shadow-sm",
-                    option.value === 'ai' && isActive && "bg-gradient-to-r from-white to-white"
-                  )}
+                  className="absolute inset-0 bg-white rounded-full shadow-sm"
                   initial={false}
                   transition={{
                     type: 'spring',
@@ -49,10 +54,7 @@ export function Toggles({ className }: TogglesProps) {
                   }}
                 />
               )}
-              <span className={cn(
-                "relative z-10",
-                option.value === 'ai' && "text-purple-600 font-semibold"
-              )}>
+              <span className="relative z-10 flex justify-center">
                 {option.label}
               </span>
             </button>

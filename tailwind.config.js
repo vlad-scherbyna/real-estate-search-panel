@@ -12,19 +12,13 @@ export default {
       },
       colors: {
         gray: {
-          200: '#FAFBFC',
-          300: '#E1E1E1',
-          400: '#C0C0C0',
-          500: '#8C93A1',
-          550: '#EBEDF0',  // bg-gray-700/15, do not use opacity with hashed line
-          600: '#677289',
-          650: '#D7DAE0',  // bg-gray-700/35, do not use opacity with hashed line
-          700: '#9DA4B2',
+          100: '#efeff5',
         },
-        dark: '#1A1A1A',
-        blue: '#2F72E2',
-        yellow: '#F59D0E',
-        red: '#EF494F',
+        purple: {
+          200: '#e7e0f7',
+          700: '#7223ec'
+        },
+        dark: '#0e0e0e',
       },
       boxShadow: {
         light: '0px 1px 1px 0px rgba(0, 0, 0, 0.02), 0px 1px 3px 0px rgba(0, 0, 0, 0.04)',
